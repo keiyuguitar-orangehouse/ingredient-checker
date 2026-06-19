@@ -402,6 +402,9 @@ function analyze() {
     return res.json();
   })
   .then(function(d) {
+    if (!d.content) {
+      throw new Error('APIレスポンス異常: ' + JSON.stringify(d));
+    }
     var txt = d.content.map(function(i) { return i.text || ''; }).join('');
     var parsed = JSON.parse(txt.replace(/```json|```/g, '').trim());
     parsed._cat = category;
