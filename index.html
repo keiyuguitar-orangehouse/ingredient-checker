@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SafeScan</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f7;color:#1a1a1a;padding-bottom:72px}
+.hdr{background:#fff;border-bottom:1px solid #e8e8e8;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.logo{font-size:17px;font-weight:700}.logo span{color:#22c55e}
+.lbs{display:flex;gap:3px}
+.lb{border:1px solid #ddd;background:#fff;color:#555;font-size:11px;padding:3px 8px;border-radius:20px;cursor:pointer;transition:.15s}
+.lb.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.panel{display:none;padding:16px;max-width:480px;margin:0 auto}
+.panel.on{display:block}
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8e8e8;display:flex;z-index:20}
+.tab{flex:1;padding:10px 0 8px;text-align:center;cursor:pointer;font-size:11px;color:#aaa;transition:.15s}
+.tab.on{color:#22c55e}
+.tab i{display:block;font-size:22px;margin-bottom:2px}
+.upload-area{background:#fff;border:2px dashed #d0d0d0;border-radius:16px;padding:24px 20px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:12px}
+.upload-area:hover,.upload-area.drag{border-color:#22c55e;background:#f0fdf4}
+.up-icon{font-size:36px;margin-bottom:8px}
+.up-title{font-size:15px;font-weight:600}
+.up-sub{font-size:12px;color:#888;margin-top:3px}
+.prev-wrap{position:relative;margin-bottom:12px}
+.prev-img{width:100%;max-height:200px;object-fit:cover;border-radius:12px}
+.rm-btn{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.cat-wrap{display:flex;gap:8px;margin-bottom:12px}
+.cat-btn{flex:1;border:1.5px solid #e0e0e0;background:#fff;color:#555;font-size:13px;font-weight:600;padding:9px 8px;border-radius:12px;cursor:pointer;transition:.15s;text-align:center}
+.cat-btn.on{border-color:#22c55e;background:#f0fdf4;color:#166534}
+.analyze-btn{width:100%;background:#22c55e;color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:16px;transition:.15s}
+.analyze-btn:hover{background:#16a34a}
+.analyze-btn:disabled{background:#ccc;cursor:not-allowed}
+.loading{text-align:center;padding:28px;display:none}
+.spinner{width:32px;height:32px;border:3px solid #eee;border-top:3px solid #22c55e;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:13px;color:#666}
+.ng-alert{background:#fee2e2;border:1.5px solid #fca5a5;border-radius:12px;padding:12px 16px;margin-bottom:12px;display:none}
+.ng-alert-title{font-size:13px;font-weight:700;color:#b91c1c;margin-bottom:6px}
+.summary-bar{background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;border:1px solid #e8e8e8}
+.sum-icon{font-size:22px}
+.sum-txt{font-size:14px;font-weight:600}
+.sum-sub{font-size:12px;color:#888}
+.cat-label{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin-top:3px}
+.cat-label-food{background:#dcfce7;color:#166534}
+.cat-label-beauty{background:#fce7f3;color:#9d174d}
+.cat-label-other{background:#e0e7ff;color:#3730a3}
+.allergy-box{background:#fff7ed;border:1.5px solid #fdba74;border-radius:12px;padding:10px 14px;margin-bottom:10px;display:none}
+.allergy-title{font-size:12px;font-weight:700;color:#c2410c;margin-bottom:5px}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.a-tag{background:#fed7aa;color:#9a3412;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.ng-tag{background:#fecaca;color:#991b1b;font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px}
+.legend{display:flex;gap:10px;margin-bottom:10px}
+.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:#666}
+.dot{width:8px;height:8px;border-radius:50%}
+.dr{background:#ef4444}.dy{background:#f59e0b}.dg{background:#22c55e}
+.sec-title{font-size:11px;font-weight:700;color:#888;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+.ing-card{background:#fff;border-radius:12px;border:1px solid #e8e8e8;padding:11px 14px;margin-bottom:7px}
+.ing-hdr{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.ing-name{font-size:14px;font-weight:600;flex:1}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.br{background:#fee2e2;color:#b91c1c}
+.by{background:#fef3c7;color:#92400e}
+.bg{background:#dcfce7;color:#166534}
+.ing-desc{font-size:12px;color:#555;line-height:1.5}
+.result-sec{display:none}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.panel-title{font-size:16px;font-weight:700}
+.clear-btn{background:#fff;border:1px solid #fca5a5;color:#b91c1c;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer}
+.clear-btn:hover{background:#fee2e2}
+.hist-card{background:#fff;border-radius:12px;border:1px solid #e8e8e8;padding:12px 14px;margin-bottom:8px;cursor:pointer}
+.hist-hdr{display:flex;align-items:center;gap:10px}
+.hist-thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.hist-ph{width:48px;height:48px;border-radius:8px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.hist-info{flex:1;min-width:0}
+.hist-date{font-size:11px;color:#888;margin-bottom:2px}
+.hist-sum{font-size:13px;font-weight:600;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-risks{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;align-items:center}
+.rc{font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px}
+.rcr{background:#fee2e2;color:#b91c1c}
+.rcy{background:#fef3c7;color:#92400e}
+.rcg{background:#dcfce7;color:#166634}
+.hist-detail{margin-top:10px;border-top:1px solid #f0f0f0;padding-top:10px;display:none}
+.empty{text-align:center;padding:40px 20px;color:#aaa}
+.empty-icon{font-size:36px;margin-bottom:8px}
+.empty-txt{font-size:14px}
+.ng-add-wrap{background:#fff;border-radius:12px;border:1px solid #e8e8e8;padding:12px 14px;margin-bottom:14px;display:flex;gap:8px}
+.ng-input{flex:1;border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:14px;outline:none;color:#1a1a1a;background:#fff}
+.ng-input:focus{border-color:#22c55e}
+.ng-add-btn{background:#1a1a1a;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.ng-add-btn:hover{background:#333}
+.ng-item{background:#fff;border-radius:10px;border:1px solid #e8e8e8;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.ng-item-name{font-size:14px;font-weight:500}
+.ng-rm{background:none;border:none;color:#ccc;font-size:20px;cursor:pointer;line-height:1;padding:0 4px;transition:.15s}
+.ng-rm:hover{color:#ef4444}
+.ng-count-badge{background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;margin-left:4px;vertical-align:middle}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">Safe<span>Scan</span></div>
+  <div class="lbs">
+    <button class="lb on" onclick="setLang('ja',this)">JP</button>
+    <button class="lb" onclick="setLang('en',this)">EN</button>
+    <button class="lb" onclick="setLang('zh',this)">中</button>
+    <button class="lb" onclick="setLang('ko',this)">한</button>
+  </div>
+</div>
+
+<!-- SCAN -->
+<div class="panel on" id="panel-scan">
+  <div class="upload-area" id="uploadArea" onclick="document.getElementById('fi').click()">
+    <div class="up-icon">📷</div>
+    <div class="up-title" id="t-up-title">原材料ラベルを撮影</div>
+    <div class="up-sub" id="t-up-sub">タップして写真を選択、またはドラッグ＆ドロップ</div>
+    <input type="file" id="fi" accept="image/*" style="display:none" onchange="handleFile(this.files[0])">
+  </div>
+  <div class="prev-wrap" id="prevWrap" style="display:none">
+    <img id="prevImg" class="prev-img" src="" alt="">
+    <button class="rm-btn" onclick="removeImg()">✕</button>
+  </div>
+  <div class="cat-wrap">
+    <button class="cat-btn on" onclick="setCat('food',this)" id="t-cat-food">🍱 食品・飲料</button>
+    <button class="cat-btn" onclick="setCat('beauty',this)" id="t-cat-beauty">💄 美容・化粧品</button>
+    <button class="cat-btn" onclick="setCat('other',this)" id="t-cat-other">📦 その他</button>
+  </div>
+  <button class="analyze-btn" id="analyzeBtn" disabled onclick="analyze()">
+    <span id="t-btn">📋 成分を解析する</span>
+  </button>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="load-txt" id="t-loading">AIが成分を解析中...</div>
+  </div>
+  <div class="result-sec" id="resultSec">
+    <div class="ng-alert" id="ngAlert">
+      <div class="ng-alert-title" id="t-ng-alert-title">🚫 NGリストの成分が含まれています</div>
+      <div class="tags" id="ngAlertTags"></div>
+    </div>
+    <div class="summary-bar">
+      <div class="sum-icon" id="sumIcon">✅</div>
+      <div>
+        <div class="sum-txt" id="sumTxt"></div>
+        <div class="sum-sub" id="sumSub"></div>
+        <span class="cat-label" id="catLabel"></span>
+      </div>
+    </div>
+    <div class="allergy-box" id="allergyBox">
+      <div class="allergy-title" id="t-allergy">⚠️ 注意成分</div>
+      <div class="tags" id="allergyTags"></div>
+    </div>
+    <div class="legend">
+      <div class="leg"><div class="dot dr"></div><span id="t-lr">要注意</span></div>
+      <div class="leg"><div class="dot dy"></div><span id="t-ly">中程度</span></div>
+      <div class="leg"><div class="dot dg"></div><span id="t-lg">安全</span></div>
+    </div>
+    <div class="sec-title" id="t-ing-title">成分一覧</div>
+    <div id="ingList"></div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="panel" id="panel-history">
+  <div class="panel-hdr">
+    <div class="panel-title" id="t-hist-title">スキャン履歴</div>
+    <button class="clear-btn" onclick="clearHistory()" id="t-clear-btn">🗑 全消去</button>
+  </div>
+  <div id="histList"></div>
+</div>
+
+<!-- NG LIST -->
+<div class="panel" id="panel-ng">
+  <div class="panel-hdr">
+    <div class="panel-title" id="t-ng-title">NGリスト</div>
+  </div>
+  <div class="ng-add-wrap">
+    <input class="ng-input" id="ngInput" type="text" placeholder="成分名を入力..." onkeydown="if(event.key==='Enter')addNG()">
+    <button class="ng-add-btn" onclick="addNG()" id="t-ng-add-btn">追加</button>
+  </div>
+  <div id="ngItemList"></div>
+</div>
+
+<!-- TABBAR -->
+<div class="tabbar">
+  <div class="tab on" onclick="showTab('scan',this)">
+    <i>🔍</i><span id="t-tab-scan">スキャン</span>
+  </div>
+  <div class="tab" onclick="showTab('history',this)">
+    <i>📋</i><span id="t-tab-hist">履歴</span>
+  </div>
+  <div class="tab" onclick="showTab('ng',this)">
+    <i>🚫</i><span id="t-tab-ng">NGリスト<span class="ng-count-badge" id="ngCountBadge" style="display:none"></span></span>
+  </div>
+</div>
+
+<script>
+let lang='ja', category='food', imgB64=null, imgThumb=null, histData=[], ngItems=[];
+
+const CATS={
+  ja:{food:'🍱 食品・飲料',beauty:'💄 美容・化粧品',other:'📦 その他'},
+  en:{food:'🍱 Food & Drink',beauty:'💄 Beauty & Cosmetics',other:'📦 Other'},
+  zh:{food:'🍱 食品饮料',beauty:'💄 美容化妆品',other:'📦 其他'},
+  ko:{food:'🍱 식품·음료',beauty:'💄 뷰티·화장품',other:'📦 기타'}
+};
+
+const T={
+  ja:{
+    upTitle:'撮影 または ライブラリから選択',upSub:'スマホはカメラ起動も可能・PCはドラッグ＆ドロップ対応',
+    btn:'📋 成分を解析する',loading:'AIが成分を解析中...',
+    alertLabel:'注意成分',lr:'要注意',ly:'中程度',lg:'安全',ingTitle:'成分一覧',
+    histTitle:'スキャン履歴',clearBtn:'🗑 全消去',ngTitle:'NGリスト',
+    ngPh:'成分名を入力...',ngAdd:'追加',tabScan:'スキャン',tabHist:'履歴',tabNg:'NGリスト',
+    ngAlertTitle:'🚫 NGリストの成分が含まれています！',
+    br:'要注意',by:'中程度',bg:'安全',
+    emptyHist:'まだスキャン履歴がありません',emptyNg:'NGリストは空です',
+    clearConfirm:'履歴を全て消去しますか？',
+    allergenLabel:'注意成分',
+    foodPrompt:`この画像の食品・飲料の原材料表示を解析してください。JSONのみ返す（マークダウン不要）：
+{"category":"food","summary":"安全性の一言コメント","allergens":["アレルゲン・注意成分名"],"ingredients":[{"name":"成分名","risk":"red|yellow|green","reason":"体への影響（2〜3文）"}]}`,
+    beautyPrompt:`この画像の美容品・化粧品の成分表示を解析してください。パラベン類、シリコーン、硫酸塩（SLS/SLES）、合成香料、フタル酸塩、ホルムアルデヒド放出剤、トリクロサン、BHA/BHT、重金属、PEG化合物、鉱物油などに注目して判定してください。JSONのみ返す（マークダウン不要）：
+{"category":"beauty","summary":"肌・体への安全性コメント","allergens":["肌刺激・アレルゲンリスクのある成分名"],"ingredients":[{"name":"成分名","risk":"red|yellow|green","reason":"肌・体への影響（2〜3文）"}]}`,
+    otherPrompt:`この画像の製品の成分・原材料表示を解析してください。人体や健康への影響を中心に判定してください。JSONのみ返す（マークダウン不要）：
+{"category":"other","summary":"安全性の一言コメント","allergens":["注意が必要な成分名"],"ingredients":[{"name":"成分名","risk":"red|yellow|green","reason":"人体への影響（2〜3文）"}]}`
+  },
+  en:{
+    upTitle:'Take photo or choose from library',upSub:'Camera available on mobile · Drag & drop on desktop',
+    btn:'📋 Analyze ingredients',loading:'AI analyzing...',
+    alertLabel:'Caution ingredients',lr:'Caution',ly:'Moderate',lg:'Safe',ingTitle:'INGREDIENTS',
+    histTitle:'Scan History',clearBtn:'🗑 Clear all',ngTitle:'NG List',
+    ngPh:'Enter ingredient name...',ngAdd:'Add',tabScan:'Scan',tabHist:'History',tabNg:'NG List',
+    ngAlertTitle:'🚫 NG ingredients detected!',
+    br:'Caution',by:'Moderate',bg:'Safe',
+    emptyHist:'No scan history yet',emptyNg:'NG list is empty',
+    clearConfirm:'Clear all history?',
+    allergenLabel:'Caution ingredients',
+    foodPrompt:`Analyze the food/drink ingredient label in this image. Return JSON only (no markdown):
+{"category":"food","summary":"Safety comment","allergens":["allergen/caution ingredient names"],"ingredients":[{"name":"Ingredient","risk":"red|yellow|green","reason":"Health effects (2-3 sentences)"}]}`,
+    beautyPrompt:`Analyze the beauty/cosmetic ingredient list in this image. Focus on: parabens, silicones, sulfates (SLS/SLES), synthetic fragrances, phthalates, formaldehyde releasers, triclosan, BHA/BHT, heavy metals, PEG compounds, mineral oil. Return JSON only (no markdown):
+{"category":"beauty","summary":"Skin/body safety comment","allergens":["skin irritant/allergen names"],"ingredients":[{"name":"Ingredient","risk":"red|yellow|green","reason":"Skin/body effects (2-3 sentences)"}]}`,
+    otherPrompt:`Analyze the ingredient/component label in this image. Focus on health and safety impacts. Return JSON only (no markdown):
+{"category":"other","summary":"Safety comment","allergens":["caution ingredient names"],"ingredients":[{"name":"Ingredient","risk":"red|yellow|green","reason":"Health effects (2-3 sentences)"}]}`
+  },
+  zh:{
+    upTitle:'拍照或从相册选择',upSub:'手机可直接调用相机 · 电脑支持拖放',
+    btn:'📋 分析成分',loading:'AI正在分析...',
+    alertLabel:'注意成分',lr:'注意',ly:'中等',lg:'安全',ingTitle:'成分列表',
+    histTitle:'扫描历史',clearBtn:'🗑 全部清除',ngTitle:'NG清单',
+    ngPh:'输入成分名称...',ngAdd:'添加',tabScan:'扫描',tabHist:'历史',tabNg:'NG清单',
+    ngAlertTitle:'🚫 检测到NG成分！',
+    br:'注意',by:'中等',bg:'安全',
+    emptyHist:'暂无扫描历史',emptyNg:'NG清单为空',
+    clearConfirm:'清除所有历史记录？',
+    allergenLabel:'注意成分',
+    foodPrompt:`分析图片中的食品/饮料原材料标签。只返回JSON（无Markdown）：
+{"category":"food","summary":"安全评价","allergens":["过敏原/注意成分"],"ingredients":[{"name":"成分","risk":"red|yellow|green","reason":"健康影响（2-3句）"}]}`,
+    beautyPrompt:`分析图片中的美容/化妆品成分表。重点关注：对羟基苯甲酸酯、硅酮、硫酸盐、合成香料、邻苯二甲酸盐、甲醛释放剂、三氯生、BHA/BHT、重金属、PEG化合物、矿物油。只返回JSON（无Markdown）：
+{"category":"beauty","summary":"皮肤/身体安全评价","allergens":["皮肤刺激/过敏原"],"ingredients":[{"name":"成分","risk":"red|yellow|green","reason":"皮肤/身体影响（2-3句）"}]}`,
+    otherPrompt:`分析图片中的产品成分标签，重点关注健康安全影响。只返回JSON（无Markdown）：
+{"category":"other","summary":"安全评价","allergens":["注意成分"],"ingredients":[{"name":"成分","risk":"red|yellow|green","reason":"健康影响（2-3句）"}]}`
+  },
+  ko:{
+    upTitle:'촬영 또는 라이브러리에서 선택',upSub:'스마트폰은 카메라 직접 실행 가능 · PC는 드래그&드롭 지원',
+    btn:'📋 성분 분석하기',loading:'AI 분석 중...',
+    alertLabel:'주의 성분',lr:'주의',ly:'보통',lg:'안전',ingTitle:'성분 목록',
+    histTitle:'스캔 기록',clearBtn:'🗑 전체 삭제',ngTitle:'NG 목록',
+    ngPh:'성분명 입력...',ngAdd:'추가',tabScan:'스캔',tabHist:'기록',tabNg:'NG목록',
+    ngAlertTitle:'🚫 NG 성분이 포함되어 있습니다!',
+    br:'주의',by:'보통',bg:'안전',
+    emptyHist:'스캔 기록이 없습니다',emptyNg:'NG 목록이 비어 있습니다',
+    clearConfirm:'모든 기록을 삭제할까요？',
+    allergenLabel:'주의 성분',
+    foodPrompt:`이미지의 식품/음료 원재료 표시를 분석해주세요. JSON만 반환(마크다운 불필요):
+{"category":"food","summary":"안전성 코멘트","allergens":["알레르겐/주의 성분명"],"ingredients":[{"name":"성분명","risk":"red|yellow|green","reason":"건강 영향 (2-3문장)"}]}`,
+    beautyPrompt:`이미지의 뷰티/화장품 성분표를 분석해주세요. 파라벤, 실리콘, 황산염(SLS/SLES), 합성향료, 프탈레이트, 포름알데히드 방출제, 트리클로산, BHA/BHT, 중금속, PEG화합물, 미네랄오일에 집중해서 판정해주세요. JSON만 반환:
+{"category":"beauty","summary":"피부/신체 안전성 코멘트","allergens":["피부 자극/알레르겐명"],"ingredients":[{"name":"성분명","risk":"red|yellow|green","reason":"피부/신체 영향 (2-3문장)"}]}`,
+    otherPrompt:`이미지의 제품 성분 표시를 분석해주세요. 건강과 안전에 미치는 영향을 중점적으로 판정해주세요. JSON만 반환:
+{"category":"other","summary":"안전성 코멘트","allergens":["주의 성분명"],"ingredients":[{"name":"성분명","risk":"red|yellow|green","reason":"건강 영향 (2-3문장)"}]}`
+  }
+};
+
+// Storage
+async function loadStorage(){
+  try{const r=await window.storage.get('ss_history');if(r)histData=JSON.parse(r.value);}catch(e){histData=[];}
+  try{const r=await window.storage.get('ss_nglist');if(r)ngItems=JSON.parse(r.value);}catch(e){ngItems=[];}
+  updateNGBadge();
+}
+async function saveHist(){try{await window.storage.set('ss_history',JSON.stringify(histData));}catch(e){}}
+async function saveNG(){try{await window.storage.set('ss_nglist',JSON.stringify(ngItems));}catch(e){}}
+
+// Category
+function setCat(c,btn){
+  category=c;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+// Lang
+function setLang(l,btn){
+  lang=l;
+  document.querySelectorAll('.lb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const t=T[l],c=CATS[l];
+  document.getElementById('t-up-title').textContent=t.upTitle;
+  document.getElementById('t-up-sub').textContent=t.upSub;
+  document.getElementById('t-btn').textContent=t.btn;
+  document.getElementById('t-loading').textContent=t.loading;
+  document.getElementById('t-allergy').textContent='⚠️ '+t.alertLabel;
+  document.getElementById('t-lr').textContent=t.lr;
+  document.getElementById('t-ly').textContent=t.ly;
+  document.getElementById('t-lg').textContent=t.lg;
+  document.getElementById('t-ing-title').textContent=t.ingTitle;
+  document.getElementById('t-hist-title').textContent=t.histTitle;
+  document.getElementById('t-clear-btn').textContent=t.clearBtn;
+  document.getElementById('t-ng-title').textContent=t.ngTitle;
+  document.getElementById('ngInput').placeholder=t.ngPh;
+  document.getElementById('t-ng-add-btn').textContent=t.ngAdd;
+  document.getElementById('t-tab-scan').textContent=t.tabScan;
+  document.getElementById('t-tab-hist').textContent=t.tabHist;
+  document.getElementById('t-ng-alert-title').textContent=t.ngAlertTitle;
+  document.getElementById('t-cat-food').textContent=c.food;
+  document.getElementById('t-cat-beauty').textContent=c.beauty;
+  document.getElementById('t-cat-other').textContent=c.other;
+}
+
+// Tabs
+function showTab(name,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('panel-'+name).classList.add('on');
+  el.classList.add('on');
+  if(name==='history')renderHistory();
+  if(name==='ng')renderNGItems();
+}
+
+// File
+const ua=document.getElementById('uploadArea');
+ua.addEventListener('dragover',e=>{e.preventDefault();ua.classList.add('drag')});
+ua.addEventListener('dragleave',()=>ua.classList.remove('drag'));
+ua.addEventListener('drop',e=>{e.preventDefault();ua.classList.remove('drag');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])});
+
+function handleFile(file){
+  if(!file||!file.type.startsWith('image/'))return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    imgB64=ev.target.result.split(',')[1];
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement('canvas');
+      c.width=80;c.height=80;
+      const ctx=c.getContext('2d');
+      const r=Math.min(img.width,img.height);
+      ctx.drawImage(img,(img.width-r)/2,(img.height-r)/2,r,r,0,0,80,80);
+      imgThumb=c.toDataURL('image/jpeg',0.5).split(',')[1];
+    };
+    img.src=ev.target.result;
+    document.getElementById('prevImg').src=ev.target.result;
+    document.getElementById('prevWrap').style.display='block';
+    document.getElementById('uploadArea').style.display='none';
+    document.getElementById('analyzeBtn').disabled=false;
+    document.getElementById('resultSec').style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImg(){
+  imgB64=null;imgThumb=null;
+  document.getElementById('prevWrap').style.display='none';
+  document.getElementById('uploadArea').style.display='block';
+  document.getElementById('analyzeBtn').disabled=true;
+  document.getElementById('fi').value='';
+  document.getElementById('resultSec').style.display='none';
+}
+
+// Analyze
+function getPrompt(){
+  const t=T[lang];
+  if(category==='beauty')return t.beautyPrompt;
+  if(category==='other')return t.otherPrompt;
+  return t.foodPrompt;
+}
+
+async function analyze(){
+  if(!imgB64)return;
+  document.getElementById('loading').style.display='block';
+  document.getElementById('resultSec').style.display='none';
+  document.getElementById('analyzeBtn').disabled=true;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1800,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:'image/jpeg',data:imgB64}},
+          {type:'text',text:getPrompt()}
+        ]}]})
+    });
+    const d=await res.json();
+    const txt=d.content.map(i=>i.text||'').join('');
+    const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    parsed._cat=category;
+    showResult(parsed);
+    await addToHistory(parsed);
+  }catch(e){alert('解析エラー。もう一度お試しください。');}
+  finally{
+    document.getElementById('loading').style.display='none';
+    document.getElementById('analyzeBtn').disabled=false;
+  }
+}
+
+function catInfo(c){
+  const map={
+    food:{icon:'🍱',cls:'cat-label-food',labels:{ja:'食品・飲料',en:'Food & Drink',zh:'食品饮料',ko:'식품·음료'}},
+    beauty:{icon:'💄',cls:'cat-label-beauty',labels:{ja:'美容・化粧品',en:'Beauty & Cosmetics',zh:'美容化妆品',ko:'뷰티·화장품'}},
+    other:{icon:'📦',cls:'cat-label-other',labels:{ja:'その他',en:'Other',zh:'其他',ko:'기타'}}
+  };
+  return map[c]||map.other;
+}
+
+// NG check
+function checkNG(ings){
+  if(!ngItems.length)return[];
+  const found=[];
+  ings.forEach(ing=>{
+    const n=ing.name.toLowerCase();
+    ngItems.forEach(ng=>{
+      const nl=ng.toLowerCase();
+      if((n.includes(nl)||nl.includes(n))&&!found.includes(ing.name))found.push(ing.name);
+    });
+  });
+  return found;
+}
+
+// Show result
+function showResult(data){
+  const t=T[lang];
+  const ngFound=checkNG(data.ingredients);
+  const ngAlert=document.getElementById('ngAlert');
+  if(ngFound.length){
+    document.getElementById('t-ng-alert-title').textContent=t.ngAlertTitle;
+    document.getElementById('ngAlertTags').innerHTML=ngFound.map(n=>`<span class="ng-tag">${n}</span>`).join('');
+    ngAlert.style.display='block';
+  }else{ngAlert.style.display='none';}
+
+  const rc=data.ingredients.filter(i=>i.risk==='red').length;
+  const yc=data.ingredients.filter(i=>i.risk==='yellow').length;
+  const gc=data.ingredients.filter(i=>i.risk==='green').length;
+  document.getElementById('sumIcon').textContent=rc>0?'⚠️':yc>0?'🟡':'✅';
+  document.getElementById('sumTxt').textContent=data.summary;
+  document.getElementById('sumSub').textContent=`🔴 ${rc}　🟡 ${yc}　🟢 ${gc}`;
+
+  const ci=catInfo(data._cat||category);
+  const cl=document.getElementById('catLabel');
+  cl.className='cat-label '+ci.cls;
+  cl.textContent=ci.icon+' '+(ci.labels[lang]||ci.labels.ja);
+
+  const abox=document.getElementById('allergyBox');
+  if(data.allergens&&data.allergens.length){
+    document.getElementById('t-allergy').textContent='⚠️ '+t.allergenLabel;
+    abox.style.display='block';
+    document.getElementById('allergyTags').innerHTML=data.allergens.map(a=>`<span class="a-tag">${a}</span>`).join('');
+  }else{abox.style.display='none';}
+
+  document.getElementById('ingList').innerHTML=data.ingredients.map(ing=>{
+    const dc=ing.risk==='red'?'dr':ing.risk==='yellow'?'dy':'dg';
+    const bc=ing.risk==='red'?'br':ing.risk==='yellow'?'by':'bg';
+    const bt=ing.risk==='red'?t.br:ing.risk==='yellow'?t.by:t.bg;
+    const isNG=ngItems.some(ng=>ing.name.toLowerCase().includes(ng.toLowerCase())||ng.toLowerCase().includes(ing.name.toLowerCase()));
+    return `<div class="ing-card" style="${isNG?'border:1.5px solid #fca5a5;background:#fff5f5':''}">
+      <div class="ing-hdr">
+        <div class="dot ${dc}"></div>
+        <div class="ing-name">${ing.name}${isNG?' 🚫':''}</div>
+        <span class="badge ${bc}">${bt}</span>
+      </div>
+      <div class="ing-desc">${ing.reason}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('resultSec').style.display='block';
+  setTimeout(()=>document.getElementById('resultSec').scrollIntoView({behavior:'smooth'}),100);
+}
+
+// History
+async function addToHistory(data){
+  const ci=catInfo(data._cat||category);
+  histData.unshift({id:Date.now(),
+    date:new Date().toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}),
+    summary:data.summary,allergens:data.allergens||[],ingredients:data.ingredients,
+    thumb:imgThumb||null,cat:data._cat||category,catIcon:ci.icon});
+  if(histData.length>30)histData=histData.slice(0,30);
+  await saveHist();
+}
+
+function renderHistory(){
+  const t=T[lang];
+  const el=document.getElementById('histList');
+  if(!histData.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">${t.emptyHist}</div></div>`;
+    return;
+  }
+  el.innerHTML=histData.map((h,i)=>{
+    const rc=h.ingredients.filter(x=>x.risk==='red').length;
+    const yc=h.ingredients.filter(x=>x.risk==='yellow').length;
+    const gc=h.ingredients.filter(x=>x.risk==='green').length;
+    const ci=catInfo(h.cat||'food');
+    const th=h.thumb?`<img class="hist-thumb" src="data:image/jpeg;base64,${h.thumb}" alt="">`:
+      `<div class="hist-ph">${h.catIcon||'📦'}</div>`;
+    const cLabel=`<span class="cat-label ${ci.cls}" style="font-size:10px;padding:1px 6px">${ci.icon} ${ci.labels[lang]||ci.labels.ja}</span>`;
+    return `<div class="hist-card" onclick="toggleHD(${i})">
+      <div class="hist-hdr">
+        ${th}
+        <div class="hist-info">
+          <div class="hist-date">${h.date}</div>
+          <div class="hist-sum">${h.summary.length>48?h.summary.slice(0,48)+'…':h.summary}</div>
+          <div class="hist-risks">
+            <span class="rc rcr">🔴 ${rc}</span>
+            <span class="rc rcy">🟡 ${yc}</span>
+            <span class="rc rcg">🟢 ${gc}</span>
+            ${cLabel}
+          </div>
+        </div>
+      </div>
+      <div class="hist-detail" id="hd-${i}">
+        ${h.allergens.length?`<div style="margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:#c2410c;margin-bottom:4px">${t.allergenLabel}</div><div class="tags">${h.allergens.map(a=>`<span class="a-tag">${a}</span>`).join('')}</div></div>`:''}
+        ${h.ingredients.map(ing=>{
+          const bc=ing.risk==='red'?'br':ing.risk==='yellow'?'by':'bg';
+          const bt=ing.risk==='red'?t.br:ing.risk==='yellow'?t.by:t.bg;
+          return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #f5f5f5">
+            <span style="font-size:13px;flex:1">${ing.name}</span>
+            <span class="badge ${bc}">${bt}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHD(i){
+  const el=document.getElementById('hd-'+i);
+  el.style.display=el.style.display==='block'?'none':'block';
+}
+
+async function clearHistory(){
+  if(!confirm(T[lang].clearConfirm))return;
+  histData=[];
+  await saveHist();
+  renderHistory();
+}
+
+// NG List
+function addNG(){
+  const input=document.getElementById('ngInput');
+  const val=input.value.trim();
+  if(!val||ngItems.includes(val)){input.value='';return;}
+  ngItems.push(val);
+  saveNG();
+  renderNGItems();
+  updateNGBadge();
+  input.value='';
+}
+
+function removeNG(i){
+  ngItems.splice(i,1);
+  saveNG();
+  renderNGItems();
+  updateNGBadge();
+}
+
+function renderNGItems(){
+  const el=document.getElementById('ngItemList');
+  if(!ngItems.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">🚫</div><div class="empty-txt">${T[lang].emptyNg}</div></div>`;
+    return;
+  }
+  el.innerHTML=ngItems.map((item,i)=>`
+    <div class="ng-item">
+      <span class="ng-item-name">${item}</span>
+      <button class="ng-rm" onclick="removeNG(${i})">×</button>
+    </div>`).join('');
+}
+
+function updateNGBadge(){
+  const b=document.getElementById('ngCountBadge');
+  if(ngItems.length>0){b.textContent=ngItems.length;b.style.display='inline';}
+  else{b.style.display='none';}
+}
+
+loadStorage();
+</script>
+</body>
+</html>
